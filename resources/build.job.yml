@@ -1,0 +1,72 @@
+# One job builds the whole demo from an empty catalog. Re-runnable: each step is idempotent.
+resources:
+  jobs:
+    nb_client360_build:
+      name: "Northbridge Client 360 - Build end to end"
+      max_concurrent_runs: 1
+      queue: {enabled: true}
+      parameters:
+        - name: regenerate
+          default: "false"
+        - name: retrain
+          default: "false"
+      tasks:
+        - task_key: setup_catalog
+          notebook_task:
+            notebook_path: ../src/setup/00_setup_catalog.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema_prefix: ${var.schema_prefix}
+              restricted_group: ${var.restricted_group}
+              pii_group: ${var.pii_group}
+              steward_group: ${var.steward_group}
+        - task_key: generate_source_data
+          depends_on: [{task_key: setup_catalog}]
+          notebook_task:
+            notebook_path: ../src/setup/01_generate_source_data.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema_prefix: ${var.schema_prefix}
+              regenerate: "{{job.parameters.regenerate}}"
+              ingest_pipeline_id: ${resources.pipelines.nb_ingest_pipeline.id}
+        - task_key: ingest_pipeline
+          depends_on: [{task_key: generate_source_data}]
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.nb_ingest_pipeline.id}
+        - task_key: train_match_model
+          depends_on: [{task_key: ingest_pipeline}]
+          notebook_task:
+            notebook_path: ../src/ml/10_train_match_model.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema_prefix: ${var.schema_prefix}
+              retrain: "{{job.parameters.retrain}}"
+        - task_key: resolve_entities
+          depends_on: [{task_key: train_match_model}]
+          notebook_task:
+            notebook_path: ../src/ml/11_resolve_entities.py
+            base_parameters: {catalog: "${var.catalog}", schema_prefix: "${var.schema_prefix}"}
+        - task_key: llm_review_assist
+          depends_on: [{task_key: resolve_entities}]
+          notebook_task:
+            notebook_path: ../src/ml/12_llm_review_assist.py
+            base_parameters: {catalog: "${var.catalog}", schema_prefix: "${var.schema_prefix}", llm_endpoint: "${var.llm_endpoint}", max_new_pairs: "300"}
+        - task_key: gold_pipeline
+          depends_on: [{task_key: llm_review_assist}]
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.nb_gold_pipeline.id}
+        - task_key: governance
+          depends_on: [{task_key: gold_pipeline}]
+          notebook_task:
+            notebook_path: ../src/governance/20_governance.py
+            base_parameters: {catalog: "${var.catalog}", schema_prefix: "${var.schema_prefix}", app_name: "${var.app_name}"}
+        - task_key: lakebase_serving
+          depends_on: [{task_key: governance}]
+          notebook_task:
+            notebook_path: ../src/lakebase/30_lakebase_serving.py
+            base_parameters: {catalog: "${var.catalog}", schema_prefix: "${var.schema_prefix}", lakebase_project: "${var.lakebase_project}", app_name: "${var.app_name}"}
+        - task_key: genie_space
+          depends_on: [{task_key: governance}]
+          notebook_task:
+            notebook_path: ../src/genie/40_genie_space.py
+            base_parameters: {catalog: "${var.catalog}", schema_prefix: "${var.schema_prefix}", warehouse_id: "${var.warehouse_id}"}

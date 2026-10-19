@@ -1,0 +1,17 @@
+resources:
+  pipelines:
+    nb_gold_pipeline:
+      name: "Northbridge Client 360 - 2 Gold (golden record, revenue, placements)"
+      catalog: ${var.catalog}
+      schema: ${var.schema_prefix}gold
+      serverless: true
+      channel: current
+      continuous: false
+      development: true
+      root_path: ../src/pipelines/gold
+      libraries:
+        - glob:
+            include: ../src/pipelines/gold/transformations/**
+      configuration:
+        catalog: ${var.catalog}
+        schema_prefix: ${var.schema_prefix}

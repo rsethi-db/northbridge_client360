@@ -1,0 +1,71 @@
+Name: northbridge_client360
+Target: dev
+Workspace:
+  Host: https://fevm-richasethi-febar.cloud.databricks.com
+  User: richa.sethi@databricks.com
+  Path: /Workspace/Users/richa.sethi@databricks.com/.bundle/northbridge_client360/dev
+
+Validation OK!
+Uploading bundle files to /Workspace/Users/richa.sethi@databricks.com/.bundle/northbridge_client360/dev/files...
+Updated pipelines.nb_gold_pipeline
+Updated pipelines.nb_ingest_pipeline
+Created apps.nb_client360_app
+Files: 2 uploaded, 0 deleted
+Resources: 1 created, 2 changed, 0 deleted, 3 unchanged
+✓ Getting the status of the app northbridge-client360
+✓ App is in UNAVAILABLE state
+✓ App compute is in STOPPED state
+✓ Starting the app northbridge-client360
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is starting...
+✓ App is started!
+✓ Preparing source code for new app deployment.
+✓ Preparing source code for new app deployment.
+✓ Installing packages...
+✓ Installing packages...
+✓ Starting app with command: python app.py
+✓ App started successfully
+You can access the app at https://northbridge-client360-7474655101081776.aws.databricksapps.com
+Run URL: https://fevm-richasethi-febar.cloud.databricks.com/jobs/84469355072162/runs/887543616200176?o=7474655101081776
+
+2026-10-16 16:30:35 "Northbridge Client 360 - Build end to end" RUNNING
+2026-10-16 16:44:12 "Northbridge Client 360 - Build end to end" TERMINATED SUCCESS
+Output:
+=======
+Task setup_catalog:
+
+=======
+Task generate_source_data:
+{"families": 452, "legal_entities": 2061, "crm_accounts": 1365, "crm_contacts": 2348, "billing_clients": 1085, "revenue_transactions": 33307, "insureds": 1380, "placements": 16748, "hc_clients": 460, "hc_policies": 4037, "carrier_statement_lines": 14537, "registry_rows": 1805, "source_party_records": 4290}
+=======
+Task train_match_model:
+registered richasethi_febar_catalog.nb_ml.party_match_model v1 as champion
+=======
+Task resolve_entities:
+{"run_id": "68b61fd9-8e53-4a2a-87af-172d07b685d7", "run_ts": "2026-10-16 21:37:49.675951+00:00", "model_name": "richasethi_febar_catalog.nb_ml.party_match_model", "model_version": 1, "source_records": 4267, "candidate_pairs": 36687, "auto_match_pairs": 3610, "review_band_pairs": 51, "golden_parties": 1862, "records_merged": 2405, "multi_record_parties": 1375, "multi_system_parties": 1346, "steward_decisions_applied": 0, "merges_blocked_by_constraints": 22, "records_reassigned_vs_previous_run": 0, "pairwise_precision": 1.0, "pairwise_recall": 0.9821}
+=======
+Task llm_review_assist:
+
+=======
+Task governance:
+
+=======
+Task genie_space:
+01f1c9aa68f11c799fc6b7334d1d2027
+=======
+Task lakebase_serving:
+
+BUILD_EXIT=0

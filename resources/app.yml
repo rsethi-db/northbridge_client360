@@ -1,0 +1,29 @@
+resources:
+  apps:
+    nb_client360_app:
+      name: ${var.app_name}
+      description: "Northbridge Client 360 - golden client record, hierarchy, revenue, steward match review"
+      source_code_path: ../app
+      user_api_scopes: [sql, dashboards.genie]
+      config:
+        command: ["python", "app.py"]
+        env:
+          - {name: CATALOG, value: "${var.catalog}"}
+          - {name: SCHEMA_PREFIX, value: "${var.schema_prefix}"}
+          - {name: LAKEBASE_ENDPOINT, value: "projects/${var.lakebase_project}/branches/production/endpoints/primary"}
+          - {name: GENIE_SPACE_TITLE, value: "Northbridge Client 360"}
+          - {name: RESTRICTED_GROUP, value: "${var.restricted_group}"}
+          - {name: PII_GROUP, value: "${var.pii_group}"}
+          - {name: STEWARD_GROUP, value: "${var.steward_group}"}
+          - {name: DATABRICKS_WAREHOUSE_ID, value_from: sql-warehouse}
+          - {name: ROUNDTRIP_JOB_ID, value_from: roundtrip-job}
+      resources:
+        - name: sql-warehouse
+          sql_warehouse: {id: "${var.warehouse_id}", permission: CAN_USE}
+        - name: lakebase
+          postgres:
+            branch: ${resources.postgres_projects.nb_lakebase.name}/branches/production
+            database: ${resources.postgres_projects.nb_lakebase.name}/branches/production/databases/databricks-postgres
+            permission: CAN_CONNECT_AND_CREATE
+        - name: roundtrip-job
+          job: {id: "${resources.jobs.nb_steward_roundtrip.id}", permission: CAN_MANAGE_RUN}

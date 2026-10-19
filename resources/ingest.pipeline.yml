@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    nb_ingest_pipeline:
+      name: "Northbridge Client 360 - 1 Ingest (raw to silver)"
+      catalog: ${var.catalog}
+      schema: ${var.schema_prefix}bronze
+      serverless: true
+      channel: current
+      continuous: false
+      development: true
+      root_path: ../src/pipelines/ingest
+      libraries:
+        - glob:
+            include: ../src/pipelines/ingest/transformations/**
+      configuration:
+        catalog: ${var.catalog}
+        schema_prefix: ${var.schema_prefix}
+        landing_path: /Volumes/${var.catalog}/${var.schema_prefix}raw/landing

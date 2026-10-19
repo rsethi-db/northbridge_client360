@@ -1,0 +1,47 @@
+1/6 Genie space
+  trashed 01f1c9a0c5841208a573b9a61e05b105
+2/6 Lakebase synced tables and Lakehouse Sync config
+  deleted synced table party
+  deleted synced table party_source_xref
+  deleted synced table client_revenue_summary
+  deleted synced table placements
+  deleted synced table match_review_queue
+  deleted Lakehouse Sync config
+3/6 Bundle resources (app, jobs, pipelines, Lakebase project)
+The following resources will be deleted:
+  delete resources.apps.nb_client360_app
+  delete resources.jobs.nb_client360_build
+  delete resources.jobs.nb_steward_roundtrip
+  delete resources.pipelines.nb_gold_pipeline
+  delete resources.pipelines.nb_ingest_pipeline
+  delete resources.postgres_projects.nb_lakebase
+
+This action will result in the deletion of the following Lakebase projects along with
+all their branches, databases, and endpoints. All data stored in them will be permanently lost:
+  delete resources.postgres_projects.nb_lakebase
+
+This action will result in the deletion of the following Lakeflow Spark Declarative Pipelines along with the
+Streaming Tables (STs) and Materialized Views (MVs) managed by them. Set 'cascade_on_destroy: false' on a pipeline to retain datasets on pipeline deletion:
+  delete resources.pipelines.nb_gold_pipeline
+  delete resources.pipelines.nb_ingest_pipeline
+
+All files and directories at the following location will be deleted: /Workspace/Users/richa.sethi@databricks.com/.bundle/northbridge_client360/dev
+
+Destroy: 6 deleted
+4/6 Registered model, ABAC policies and schemas
+  skip: DROP POLICY IF EXISTS nb_hide_restricted_clients ON SCHEMA richasethi_febar_catalog.nb_gold
+  skip: DROP POLICY IF EXISTS nb_mask_name ON SCHEMA richasethi_febar_catalog.nb_gold
+  skip: DROP POLICY IF EXISTS nb_mask_email_address ON SCHEMA richasethi_febar_catalog.nb_gold
+  skip: DROP POLICY IF EXISTS nb_mask_phone_number ON SCHEMA richasethi_febar_catalog.nb_gold
+  ok: DROP SCHEMA IF EXISTS richasethi_febar_catalog.nb_serving CASCADE
+  ok: DROP SCHEMA IF EXISTS richasethi_febar_catalog.nb_app CASCADE
+  ok: DROP SCHEMA IF EXISTS richasethi_febar_catalog.nb_gold CASCADE
+  ok: DROP SCHEMA IF EXISTS richasethi_febar_catalog.nb_ml CASCADE
+  ok: DROP SCHEMA IF EXISTS richasethi_febar_catalog.nb_silver CASCADE
+  ok: DROP SCHEMA IF EXISTS richasethi_febar_catalog.nb_bronze CASCADE
+  ok: DROP SCHEMA IF EXISTS richasethi_febar_catalog.nb_raw CASCADE
+5/6 MLflow experiment
+  deleted experiment 1171238865906533
+6/6 Groups
+  kept (pass --with-groups to delete)
+teardown complete

@@ -1,0 +1,10 @@
+# local state and credentials - never commit
+.databricks/
+.databrickscfg
+*.env
+.env*
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+evidence_*.log

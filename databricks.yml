@@ -1,0 +1,41 @@
+bundle:
+  name: northbridge_client360
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog that holds every demo schema
+    default: richasethi_febar_catalog
+  schema_prefix:
+    description: Prefix for the six demo schemas (raw, bronze, silver, gold, ml, app)
+    default: nb_
+  warehouse_id:
+    description: Serverless SQL warehouse used for governance SQL, Genie, and the app
+    default: f4edbf03911f5f8e
+  restricted_group:
+    description: Group allowed to see the Restricted client segment (row filter)
+    default: northbridge_restricted_clients
+  pii_group:
+    description: Group allowed to see unmasked client contact PII (column masks)
+    default: northbridge_pii_readers
+  steward_group:
+    description: Group allowed to record match decisions and run entity resolution from the app
+    default: northbridge_data_stewards
+  llm_endpoint:
+    description: Foundation Model endpoint used for the steward match-review assist
+    default: databricks-claude-sonnet-4-6
+  lakebase_project:
+    description: Lakebase Autoscaling project serving the Client 360 app
+    default: northbridge-client360
+  app_name:
+    description: Databricks App name for the Client 360 app
+    default: northbridge-client360
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: https://fevm-richasethi-febar.cloud.databricks.com
+      root_path: ~/.bundle/${bundle.name}/${bundle.target}

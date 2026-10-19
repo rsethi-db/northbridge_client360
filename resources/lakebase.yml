@@ -1,0 +1,7 @@
+resources:
+  postgres_projects:
+    nb_lakebase:
+      project_id: ${var.lakebase_project}
+      display_name: Northbridge Client 360
+      pg_version: 17
+      purge_on_delete: true  # bundle destroy hard-deletes, so the project id can be reused by the next from-scratch build
