@@ -1,11 +1,13 @@
 # Roleplay prep — Northbridge Client 360
 
 Two personas in one room:
-- **Business:** the executive sponsor, e.g. a Chief Client Officer or COO. They fund the decision and care about cost, risk and time to value.
+- **Business:** the executive sponsor, the CFO (with the Chief Client Officer). Measured on organic revenue growth and EBITDA margin; cares about cost, risk and time to value.
 - **Technical:** the head of data or enterprise architect who has to live with it. They care about architecture, data quality, security and integration.
 
 Target: **30 minutes**. Questions will come throughout, so the agenda leaves a buffer at the end.
 
+> New to broking? Start with [`primer.md`](primer.md).
+>
 > Short on time? The 25-minute word-for-word version, with the AE-vs-steward explanation, expected questions and a requirement coverage checklist, is in [`demo_script_25min.md`](demo_script_25min.md).
 
 | Time | Segment | Slides / screen | Purpose |
@@ -15,11 +17,11 @@ Target: **30 minutes**. Questions will come throughout, so the agenda leaves a b
 | 5:00–6:00 | **The journey**, one breath per box | 6 | Integrated, not stitched; the technical persona's anchor |
 | 6:00–18:00 | **Demo: four moments, ~3 min each** | 7 (divider) → switch to the app | Tell-show-tell each moment (section 2) |
 | 18:00–21:00 | **Land the value** | 8 → 9 → 10 | Walk the value table; one number everywhere; the operational loop |
-| 21:00–24:00 | **Technical depth** for the architect | 11 → 12 | Matching quality, trade-offs; switch altitude, then bridge back |
-| 24:00–26:00 | **Time to value and the ask** | 13 → 14 | Six-week pilot, success criteria, explicit ask |
-| 26:00–30:00 | **Q&A buffer** | 15 (backup), 16 (appendix) | Objection bank (section 4); end by restating the ask |
+| 21:00–24:00 | **Technical depth** for the architect | 11 → 12 → 13 | Matching quality, trade-offs, how it was built with AI; switch altitude, then bridge back |
+| 24:00–26:00 | **Time to value, what's next and the ask** | 14 → 15 → 16 | Six-week pilot, success criteria, explicit ask |
+| 26:00–30:00 | **Q&A buffer** | 17 (backup), 18 (appendix) | Objection bank (section 4); end by restating the ask |
 
-If you're running long, cut the technical-depth block to slide 12 only. If you're running short, use the "with extra time" column in section 2.
+If you're running long, cut the technical-depth block to slides 12 and 13 only. If you're running short, use the "with extra time" column in section 2.
 
 ## Before you start (5 minutes ahead)
 
@@ -35,7 +37,7 @@ If you're running long, cut the technical-depth block to slide 12 only. If you'r
 - **Slides:** `docs/deck/northbridge_client360_deck.html` in Chrome. Use → / ← (or click the right or left side) to move, **F** for full screen, Home/End to jump. The URL shows the slide number (`…deck.html#8` opens the value case directly).
 - **Speaker window:** press **S**. It opens a separate window with the current slide's notes, the next slide, an elapsed timer and each slide's target time against the 30-minute agenda. Arrow keys work there too. Share only the slides window, so the notes stay private.
 - **Switching to the demo:** slide 7 is the cue. Switch to the app tab and keep the deck tab on slide 7. Come back and press → to land on the value case at 18:00.
-- **Fallback:** `northbridge_client360_deck.pdf` has the same 16 slides in the same order, for Preview or Keynote full screen.
+- **Fallback:** `northbridge_client360_deck.pdf` has the same 18 slides in the same order, for Preview or Keynote full screen.
 
 ## 1. Demo setup (0:00–3:00, slides 1–3) — frame before you click
 
@@ -53,7 +55,7 @@ Then ask the sponsor: *"Of renewal retention, cross-sell into the acquired book,
 | 3 | "The machine does the obvious merges; people make the judgement calls." | **Data steward** tab → header strip (51 pairs, 1.4%) → pick a MERGE pair → field-by-field agreement, model 0.6–0.8, Claude's rationale → **Approve merge** → **Run entity resolution now**. | "Your stewards review 51 cases, not 3,600, with an AI second opinion, and every decision is audited. Their click flows back into the lakehouse in ~13 seconds; no ticket queue." (Show `09_steward_roundtrip.md` for the completed before/after.) | Pipelines → *1 Ingest* → `revenue_transactions` → **Data quality** tab: failed expectations and the `dq_quarantine` worklist. |
 | 4 | "Finally, the guardrail for defence and government clients." | Header: *Restricted segment: visible*. Search *Ironclad* → RESTRICTED badge, served from gold as you. Then show the toggle result in `04_governance.md` (51 → 0 restricted, Genie says "0 restricted clients"). | "Tag the data once and every tool obeys: SQL, dashboards, Genie, this app. Restricted clients are never copied into the operational database." | `nb_gold` → **Policies** tab: two tag-matched ABAC policies; show `party_contacts` with emails masked for you. |
 
-After the demo, return to the deck at slide 8: value (8–10) at 18:00, technical depth (11–12) at 21:00, and the pilot and ask (13–14) at 24:00.
+After the demo, return to the deck at slide 8: value (8–10) at 18:00, technical depth and how it was built (11–13) at 21:00, and the pilot, roadmap and ask (14–16) at 24:00.
 
 ## 3. Reading the room — switch altitude mid-answer
 

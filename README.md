@@ -2,7 +2,7 @@
 
 > **Business outcome.** After acquiring the Harbor & Cole agency, Northbridge Risk Partners (a global insurance broker paid in fees and commission) holds the same corporate client up to six times across four systems and cannot answer *"what is our total relationship with this client?"*. This build resolves those records into one governed golden client with its legal-entity hierarchy, serves it to account executives in milliseconds, and answers revenue questions in plain English with one certified number. **On the synthetic book ($474.5M FY2025 fee and commission income) that is worth about $6.9M a year**, from protecting 75 overlapping client relationships at renewal, cross-selling into 224 acquired-only clients, and recovering $11.3M of commission flagged on carrier statements. It also cuts steward effort to the 1.4% of match decisions that need a human.
 
-**Deck:** [`docs/deck/northbridge_client360_deck.pdf`](docs/deck/northbridge_client360_deck.pdf) (Markdown with speaker notes: [`.md`](docs/deck/northbridge_client360_deck.md)) · **Evidence the build ran:** [`evidence/`](evidence/) (all text) · **Demo prep:** [`docs/roleplay_prep.md`](docs/roleplay_prep.md)
+**Deck:** [`docs/deck/northbridge_client360_deck.pdf`](docs/deck/northbridge_client360_deck.pdf) (Markdown with speaker notes: [`.md`](docs/deck/northbridge_client360_deck.md)) · **Evidence the build ran:** [`evidence/`](evidence/) (all text) · **Demo prep:** [primer](docs/primer.md), [25-min script](docs/demo_script_25min.md), [30-min roleplay prep](docs/roleplay_prep.md)
 
 ## The value case
 
@@ -217,6 +217,8 @@ src/lakebase/                  30 synced tables, steward table, Lakehouse Sync, 
 app/                           Dash app (backend.py: Lakebase as SP; UC + Genie on behalf of the user)
 scripts/                       build.sh · teardown.sh · collect_evidence.py · test_genie.py · pg.py
 docs/deck/                     business deck (PDF + Markdown with speaker notes) and its generator
+docs/primer.md                 plain-English primer: broking, vocabulary, story, numbers
+docs/demo_script_25min.md      conversational 25-minute demo script and expected questions
 docs/roleplay_prep.md          tell-show-tell talk track and objection bank
 evidence/                      text-readable execution evidence from the from-scratch build
 ```

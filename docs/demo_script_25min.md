@@ -1,366 +1,407 @@
 # 25-minute demo script: Northbridge Client 360
 
-This is a word-for-word script: what to say, what to click and how long each part takes. It touches every capability the brief asks for; the coverage checklist at the end maps each requirement to the minute where you show it. Questions you should expect are in section 4.
+**New to broking? Read [`primer.md`](primer.md) first.** It explains how a broker makes money, the vocabulary, the story and the numbers.
 
----
+This is written the way you'd actually say it. Lines in quotes are what you say; the notes in *italics* are what you do. You don't need to memorise it word for word: learn the *beats*, and say them in your own voice.
 
-## 1. First: what the two app views are for
+**Running order (18-slide deck):**
 
-The app has two tabs because two different people use the golden record for two different jobs.
-
-### Account executive (AE) view: *consume* the golden record
-
-**Who:** the account executive, or relationship manager, who owns a client and walks into renewal meetings.
-
-**Their question:** *"What is our total relationship with this client, across every entity and every system, including what we inherited from Harbor & Cole?"*
-
-**What the tab gives them:**
-- **Search** by client, subsidiary, registration number or party id.
-- **The golden record:** one name, plus how many source records and systems were unified into it. For Kestrel that's 6 records across 4 systems.
-- **Legal-entity hierarchy** as a tree: parent → regional holding companies → operating subsidiaries. Bluewater Coatings is a renamed acquisition linked through the registry.
-- **Revenue** (fee and commission, never premium) rolled up to the parent, by fiscal year.
-- **Placements** by line of business and carrier.
-- **"Where this record came from":** the lineage summary showing which source records from which systems made it.
-- **Ask Genie:** a follow-up question in plain English.
-
-**Where the data comes from:**
-- Ordinary clients are read from the **Lakebase** serving copy, in about 25 ms.
-- Restricted clients are read from **gold on behalf of the user**, so ABAC decides whether they appear at all.
-
-**Business value:** fewer surprises at renewal, cross-sell into the acquired book, and one number that matches finance.
-
-### Data steward view: *maintain* the golden record
-
-**Who:** a data steward in client data operations, a small team.
-
-**Their job:** *"The model merged 98% of records on its own. For the uncertain 1.4%, decide whether two records are the same company, and make that decision stick."*
-
-**What the tab gives them:**
-- **A review queue** of only the ambiguous pairs, with match probability between 0.30 and 0.80. Today that's 51 pairs out of 3,661 decisions.
-- **For each pair:**
-  - both source records side by side, with field-by-field agreement;
-  - the model's probability;
-  - **Claude's recommendation and rationale**;
-  - a free-text rationale box for the steward.
-- **Actions:** **Approve merge**, **Keep separate** (reject) and **Split record B out**. Each one writes a row to **Lakebase** (`steward.steward_decisions`) recording who decided, when and why.
-- **Recent decisions** (the audit trail) and **Run entity resolution now**, which applies the decisions.
-  - **Lakehouse Sync** streams the decision into Unity Catalog in about 13 seconds.
-  - Entity resolution then treats approvals as must-link and rejects as cannot-link.
-  - Gold rebuilds and Lakebase refreshes.
-- Only members of `northbridge_data_stewards` can act. The header pill shows *Data steward*.
-
-**Business value:** steward effort drops from about 3,600 decisions to 51. Every call is audited, and the fix lands in the lakehouse without a ticket or custom ETL.
-
-### One-line version for the room
-
-> "The AE view **reads** the golden record to win renewals; the steward view **writes** to it to keep it right. Lakebase sits in the middle: fast reads for the AE, transactional writes for the steward, synced both ways with the lakehouse."
-
----
-
-## 2. Setup (do this 10 minutes before)
-
-- [ ] **App** open and warm: search **Kestrel** once.
-  - Header pills read *Restricted segment: visible* and *Data steward*.
-  - Tabs to open: `https://northbridge-client360-7474655101081776.aws.databricksapps.com`
-- [ ] **Workspace tabs, already open:**
-  1. **Catalog Explorer** → `richasethi_febar_catalog.nb_raw.landing` (Volume)
-  2. **Jobs** → *Northbridge Client 360 build* (latest successful run, DAG view)
-  3. **Pipelines** → *1 Ingest*, graph showing bronze → silver
-  4. **Catalog Explorer** → `nb_gold.dim_party` → **Lineage** tab
-  5. **Catalog Explorer** → `nb_gold` schema → **Policies** tab
-  6. **MLflow** → model `nb_ml.party_match_model` (champion alias)
-  7. **Genie space** *Northbridge Client 360* → **Instructions** panel
-- [ ] **Evidence backups:** `evidence/04_governance.md` (ABAC toggle) and `evidence/09_steward_roundtrip.md` (completed round trip).
-- [ ] **Deck:** `docs/deck/northbridge_client360_deck.html` in Chrome. Press **F**, then **S** for speaker notes. Share the slides window only.
-
-> **Note:** The deck's speaker timer targets the 30-minute plan. In this 25-minute version, follow the clock below and skip the slides marked *skip*.
-
----
-
-## 3. The script
-
-**Timing:** 25:00 total, with a built-in 1:30 buffer for interruptions.
-
-| Clock | Block | Slides / screen |
+| Clock | What | Slides |
 |---|---|---|
-| 0:00–2:30 | Frame | Deck 1 → 2 → 3 |
-| 2:30–3:30 | Journey | Deck 6 (skip 4, 5) |
-| 3:30–17:30 | **Live demo, five moments** | Deck 7 → workspace and app |
-| 17:30–20:30 | Value and trust | Deck 8 → 9 → 10 |
-| 20:30–22:00 | Trade-offs | Deck 12 (skip 11 unless asked) |
-| 22:00–23:30 | Pilot and ask | Deck 13 → 14 |
-| 23:30–25:00 | Buffer / first question / close | Deck 15 |
+| 0:00 | Open and set the scene | 1 → 2 → 3 |
+| 3:00 | Who wins | 4 |
+| 3:45 | How it fits together | 6 *(skip 5)* |
+| 4:30 | **Live demo: five moments** | 7 → app |
+| 16:30 | What it's worth, and why you can trust it | 8 → 9 *(skip 10, 11)* |
+| 18:30 | Trade-offs and how I built it | 12 → 13 |
+| 20:30 | The pilot, what's next, the ask | 14 → 15 → 16 |
+| 23:00 | Questions | 17 as backup |
 
-### 0:00–2:30 · Frame (slides 1–3)
+---
 
-**Slide 1:**
-> "Thanks for the time. I'm going to show you how Northbridge gets one governed view of every client *now*, without waiting for a CRM migration."
+## Before you start (10 minutes ahead)
 
-**Slide 2 (outcome):**
-> "Here's the punchline first: about **$6.9 million a year** on a $474 million book. That comes from three things: protecting overlapping relationships at renewal, cross-selling into the Harbor & Cole book, and recovering commission that carriers short-paid. I'll show you where every number comes from."
+- **App** open, and you've searched *Kestrel* once so it's warm. The header shows *Restricted segment: visible* and *Data steward*.
+- **Workspace tabs, in this order:**
+  1. the `nb_raw.landing` Volume
+  2. the build job run
+  3. the *1 Ingest* pipeline
+  4. `nb_gold.dim_party` → Lineage
+  5. `nb_gold` → Policies
+  6. the MLflow model
+  7. the Genie space
+- **Backups:** `evidence/04_governance.md` and `evidence/09_steward_roundtrip.md`.
+- **Deck** in Chrome: **F** for full screen, **S** for your notes. Share only the slides window.
 
-**Slide 3 (problem):**
-> "Three months ago you bought Harbor & Cole. Today Kestrel Industries, one of your biggest clients, exists **six times in four systems**: your CRM twice, billing, the placement platform, and twice in Harbor & Cole's legacy AMS. Finance, placement and the account team each have a different number for what Kestrel is worth."
+---
 
-**Discovery question to the sponsor:**
-> "Of renewal retention, cross-sell into the acquired book, or commission leakage, which matters most to you this year?"
+## 0:00 · Open (slide 1)
 
-Note the answer and weight the value section toward it.
+> "Thanks for making the time. Before I show anything, let me tell you where we'll end up, because I think it's a number you'll care about."
 
-### 2:30–3:30 · Journey (slide 6)
+*Press → to slide 2.*
 
-> "One platform, one flow. Raw files from four systems land in a governed volume. Lakeflow cleans them. A match model plus Claude resolves them into golden records. Unity Catalog governs it all. Lakebase serves it to the app. Genie answers questions on the same certified numbers. **One bundle deploys all of it.** Let me show you it running."
+## 1:00 · The outcome (slide 2)
 
-Press → to **slide 7** and switch to the browser.
-
-### 3:30–17:30 · Live demo: five moments, about 2:45 each
-
-Each moment follows **tell → show → tell again**.
-
-#### Moment 1 (3:30–6:00): the data lands and gets cleaned (Lakeflow)
-
-**Tell:**
-> "First, how the mess gets in and gets cleaned, with no hand-built ETL."
-
-**Show:**
-1. **Volume** `nb_raw/landing`: open folders `crm/`, `billing/`, `placement/`, `harbor_cole/`, `carrier_statements/`. Click `HC_CLIENT_MASTER.TXT`.
-   > "This is the acquired agency's system: pipe-delimited, uppercase, abbreviations, transposed registration digits. And carrier statements come in **three different column layouts**."
-2. **Jobs** → build run DAG.
-   > "One Lakeflow Job runs everything end to end, from scratch, in about 14 minutes on serverless: generate, ingest, train, resolve, LLM review, gold, governance, Genie and Lakebase."
-3. **Pipeline** *1 Ingest* → graph:
-   > "Auto Loader picks up new files into bronze. Silver standardises names, countries and currencies, and normalises the three carrier layouts into one schema."
-4. Click `crm_accounts` → **Data quality** tab:
-   > "Expectations run on every row. 367 CRM accounts are missing a registration number, which warns but keeps the row. 272 carrier lines reference a policy we don't have; those get dropped."
-5. Open `nb_silver.dq_quarantine`:
-   > "Dropped rows aren't lost. They land here with the rule they broke: a worklist for data ops."
-
-**Tell again:**
-> "Every new file is picked up automatically, quality is measured on every row, and bad data is quarantined, not silently lost."
-
-#### Moment 2 (6:00–8:45): one client, one number (AE view, Lakebase, ML)
-
-**Tell:**
-> "Now what your account executive sees before a renewal."
-
-**Show:** the app → **Account executive** tab → search *Kestrel* → **Kestrel Industries plc**.
-1. Headline sentence and pills:
-   > "Six source records, four systems, unified into one golden client."
-2. **Hierarchy tree:**
-   > "Parent, regional holdcos, operating subsidiaries. Bluewater Coatings has a completely different name, a renamed acquisition. The model linked it from the legal-entity registry, not from the name."
-3. **Revenue chart:**
-   > "Fee and commission income, never premium, rolled up to the parent. FY2026 is hatched because it's year to date."
-4. **Placements by line**, then **"Where this record came from":**
-   > "Every source record, its system, how it was matched and the confidence. The AE can see Harbor & Cole revenue they've never had visibility into."
-5. Point at the provenance footnote:
-   > "This page came from **Lakebase**, our managed Postgres, in about 25 milliseconds. That's app-grade latency on lakehouse data."
-
-**Tell again:**
-> "One client, one number, in milliseconds, including what you inherited with Harbor & Cole."
-
-#### Moment 3 (8:45–11:30): ask in plain English, same number (Genie, metric view)
-
-**Tell:**
-> "Now the question your CFO actually asks, in plain English."
-
-**Show:**
-1. **✦ Ask Genie** → chip *"What's our total revenue with Kestrel…"* Wait 10–30 s; the answer is **$3.84M**.
-2. Expand **Show the SQL**:
-   > "No black box. It used a trusted function over the certified **metric view**: one definition of Total Client Revenue."
-3. Ask the follow-up chip *"Which acquired Harbor & Cole clients overlap…"*:
-   > "Same conversation; it remembers context."
-4. Close the panel and click **Tie out to the certified metric view**:
-   > "App, Genie and the metric view **match to the cent**."
-5. *(optional, 20 s)* Genie space tab → **Instructions**:
-   > "We taught it broker vocabulary: a client is a corporate family, revenue means fee plus commission, and subsidiaries roll up to the parent by default. It's tested against five benchmark questions."
-
-**Tell again:**
-> "Same certified definition in the app, Genie and finance. No more three answers in the board pack."
-
-#### Moment 4 (11:30–14:30): people make the judgement calls (steward view, LLM, Lakebase write-back)
-
-**Tell:**
-> "The machine does the obvious merges; people make the judgement calls."
-
-**Show:** **Data steward** tab.
-1. Header strip:
-   > "Out of about 3,600 match decisions, the model was confident on all but **51**, which is 1.4%. Only those reach a human."
-2. Pick a MERGE pair (a MERIDIAN pair works well):
-   > "Both records side by side, which fields agree, the model's probability, and **Claude's recommendation with its reasoning**. Claude advises; the steward decides."
-3. Type a short rationale and click **Approve merge**:
-   > "That decision just went into **Lakebase** as a transaction: who, when, why. That's the audit trail."
-4. Point at **Recent steward decisions**, then click **Run entity resolution now**:
-   > "**Lakehouse Sync** streams that Postgres row into Unity Catalog in about 13 seconds. Entity resolution treats it as a hard rule, rebuilds gold and refreshes Lakebase. No ticket, no custom pipeline."
-5. Switch to `evidence/09_steward_roundtrip.md` (the run takes a few minutes):
-   > "Here's that exact loop completed earlier: two MERIDIAN records became one golden party."
-6. *(optional, 20 s)* MLflow model tab:
-   > "The match model is a gradient-boosted classifier, registered in Unity Catalog with a champion alias. On labelled data it scores 100% precision and 98% recall. Steward decisions become new training labels."
-
-**Tell again:**
-> "Your stewards review 51 cases, not 3,600, with an AI second opinion, and every decision is audited and flows back automatically."
-
-#### Moment 5 (14:30–17:30): governed once, enforced everywhere (Unity Catalog)
-
-**Tell:**
-> "Finally, the guardrails, because this is client data, some of it defence and government."
-
-**Show:**
-1. App: search *Ironclad* → **RESTRICTED** badge:
-   > "I'm in the restricted-clients group, so I see it. It's read from gold *as me*, never from the operational copy. Restricted clients are never copied to Lakebase."
-2. **`nb_gold` → Policies** tab:
-   > "Two **attribute-based** policies, not per-table rules. Any column tagged with the restriction flag is row-filtered. Any column classified as name, email or phone is masked unless you're a PII reader. Tag a new table and it's protected automatically."
-3. Open `party_contacts` sample data:
-   > "Emails are masked for me, because I'm not a PII reader."
-4. `evidence/04_governance.md`:
-   > "I removed myself from the group. Within minutes the app went from 1,862 clients to 1,811, restricted clients from 51 to 0, and Genie answered '0 restricted clients'. Same policy, every tool."
-5. **Table tags** (`dim_party` → Details):
-   > "Gold is tagged *certified*, revenue tables are tagged *SOX-relevant*, and silver is deliberately uncertified, so the badge means something. Comments on every column feed Genie and search."
-6. **`dim_party` → Lineage** graph:
-   > "The golden record traces back to **all four source systems**, down to the file. And Genie's answer traces to gold."
-
-**Tell again:**
-> "Tag the data once and every tool obeys it: SQL, Genie, the app. Lineage gives audit the full chain."
-
-Switch back to the deck and press → to **slide 8**.
-
-### 17:30–20:30 · Value and trust (slides 8–10)
-
-**Slide 8 (value):**
-> "So what's it worth? Here are three levers, each from measured inputs:
-> - **75** client families exist in both books, with **$89.8M** of revenue at renewal risk. Protecting 2% is **$1.8M**.
-> - **224** acquired-only clients with **$34.5M**. Cross-selling 5% is **$1.7M**.
-> - **371** placements short-paid or missing on carrier statements, **$11.3M** flagged. Recovering 30% is **$3.4M**.
+> "On a book like Northbridge's, about four hundred and seventy-five million in fees and commission, getting a single view of your clients is worth roughly **seven million dollars a year**. That's not from new technology for its own sake. It comes from three very ordinary things: keeping clients at renewal, selling more to the clients you just acquired, and collecting commission carriers already owe you.
 >
-> That's about **$6.9M a year**, 1.5% of revenue. The rates are conservative placeholders; the pilot replaces them with your history."
+> I'll show you where each of those numbers comes from. But first, let me show you *why* it's hard today."
 
-Weight this toward the lever the sponsor picked in the discovery question.
+*Press → to slide 3.*
 
-**Slide 9 (trust):**
-> "Accurate: 100% precision and 98% recall. Governed: ABAC and lineage. Explainable: every merge shows its evidence."
+## 2:00 · The problem (slide 3)
 
-**Slide 10 (operational loop):**
-> "And it stays right: steward to Lakebase to lakehouse to golden record, in minutes."
+> "So, three months ago you bought Harbor & Cole. Great deal. But here's what it did to your data.
+>
+> This is Kestrel Industries, one of your biggest clients. Today it lives in your systems **six times**. Twice in your CRM. Once in billing, spelled out in full as 'Public Limited Company'. Once in the placement platform. And twice more in Harbor & Cole's old system, in capitals, one of them abbreviated to 'KESTREL INDS'.
+>
+> So if I ask, 'what's our total relationship with Kestrel?', finance gives me one number, placement gives me another, and the account team gives me a third. Nobody's wrong; they just can't see each other's records.
+>
+> The usual fix is 'let's migrate everything into one CRM'. That's a two-year project, and you lose the value while you wait."
 
-### 20:30–22:00 · Trade-offs (slide 12), aimed at the architect
+*Look at the sponsor:*
 
-> "Three choices I made deliberately:
-> - **Restricted clients aren't synced to Lakebase.** Lakebase can't sync policy-protected tables, and I'd rather not copy them anyway. Those few clients are read from gold as the user, in about 3 s instead of 25 ms.
-> - **ABAC over per-table filters,** so new tables are protected by tagging.
-> - **An explainable model plus an LLM only for the grey zone,** so cost stays bounded and stewards can see *why*."
+> "Can I ask you something before we go on? Of these, retention at renewal, cross-selling into the Harbor & Cole book, or commission leakage, which one keeps you up at night this year?"
 
-**Bridge to the sponsor:**
-> "For you, that means the sensitive clients stay in the most governed place."
+*Listen, and remember the answer. Bring it back on the value slide.*
 
-### 22:00–23:30 · Pilot and ask (slides 13–14)
+## 3:00 · Who wins (slide 4)
 
-**Slide 13:**
-> "Six weeks on your data. Weeks 1–2: connect three systems with Lakeflow Connect. Weeks 3–4: matching and governance on your book, with overlap and leakage worklists usable in week four. Weeks 5–6: twenty AEs on the app, measured on usage and recovered commission."
+> "There are really two people this is for.
+>
+> For you, as CFO, it moves the two numbers you're measured on. Retention and cross-sell add about **0.7 points of organic growth**. Recovered commission is almost pure profit, so that's about **72 basis points of EBITDA margin**. And it gives you one revenue number your auditors will accept.
+>
+> For your head of client data, it's about workload and control: far fewer duplicates to fix by hand, and proof that sensitive clients are protected."
 
-**Slide 14:**
-> "What I need: a sponsor, a named domain owner, read access to three systems and two stewards for two hours a week. Can we agree on the pilot?"
+*Skip slide 5. Press → twice to slide 6.*
 
-### 23:30–25:00 · Buffer and close
+## 3:45 · How it fits together (slide 6)
 
-Take the first question (section 4). If there are none, go to slide 15 and say:
-> "The questions I usually get are on cost, MDM and accuracy. Happy to start with any of those."
+> "Here's the whole thing on one page, and then I'll show it to you running.
+>
+> Files from your four systems land in one place. Databricks cleans them and checks their quality. A machine-learning model works out which records are really the same company, and where it's unsure, Claude explains the case to a person. Everything is governed in one catalog, with security rules that apply everywhere. The result is served to an app in milliseconds, and people can ask questions in plain English.
+>
+> And the bit I'm proudest of is the loop at the bottom: when a person corrects the data in the app, that correction flows back and the system *learns* it. Let's look."
 
-**Final line:**
-> "One governed client layer now, about $6.9M a year, six weeks to prove it. Can we agree on the pilot?"
+*Press → to slide 7, then switch to the browser.*
+
+---
+
+## 4:30 · Live demo: five moments (about 2½ minutes each)
+
+### Moment 1 · "Here's the mess, and here's it getting cleaned" (Lakeflow)
+
+> "Let's start with the raw data, because I want you to see it's genuinely messy."
+
+*Open the Volume `nb_raw/landing`. Click into `harbor_cole/clients/HC_CLIENT_MASTER.TXT`.*
+
+> "This is Harbor & Cole's export: pipe-delimited, all capitals, abbreviations, and some registration numbers with digits swapped round. And here's the fun one: three carriers send their commission statements in **three different layouts**, with different columns and different date formats."
+
+*Switch to the job run.*
+
+> "This one job runs the whole thing end to end, from an empty catalog to the finished app, in about fourteen minutes. Nobody has to babysit it."
+
+*Switch to the *1 Ingest* pipeline, then click `crm_accounts` → **Data quality**.*
+
+> "As files arrive they're picked up automatically, cleaned, and checked against rules. Look: 367 CRM accounts have no registration number, so we flag that but keep them. Down here, 272 carrier lines point to a policy we've never heard of, so those get pulled out."
+
+*Open `nb_silver.dq_quarantine`.*
+
+> "And they're not thrown away. They land here with the rule they broke, which gives your ops team a worklist. So: new data in automatically, quality checked on every row, nothing lost silently."
+
+### Moment 2 · "One client, one number" (account executive view)
+
+> "Now let's be an account executive with Kestrel's renewal next week."
+
+*Open the app → **Account executive** tab → search **Kestrel** → click **Kestrel Industries plc**.*
+
+> "One client. And it tells me straight away: built from six records across four systems. Those are the six we just saw.
+>
+> Here's the family tree: the parent, the regional companies and the operating subsidiaries. See Bluewater Coatings? Completely different name. It was an acquisition that got renamed. Matching on names would never find it; we linked it through the company registry.
+>
+> Here's revenue, fees plus commission, never premium, rolled up across the whole family by year. This year's bar is shaded because it's year to date. Placements by line of business. And down here, exactly which source records made up this client, including what Harbor & Cole was earning that this AE has never been able to see.
+>
+> One more thing: look at the corner. This page loaded from Lakebase in about **twenty-five milliseconds**, the speed you'd want from an operational app."
+
+### Moment 3 · "Ask it in plain English" (Genie)
+
+> "Now, your CFO doesn't want to click around. They want to ask a question."
+
+*Click **✦ Ask Genie**, then the chip "What's our total revenue with Kestrel…". It takes 10–30 seconds; keep talking while it runs.*
+
+> "This is Genie. We taught it how a broker talks: a 'client' means the whole corporate family, 'revenue' means fees and commission, and subsidiaries roll up to the parent."
+
+*When the answer lands, about $3.84M:*
+
+> "There we go. And if you don't trust it, you can see exactly what it ran."
+
+*Open **Show the SQL**.*
+
+> "It used the official revenue definition, the same one finance uses. Let me prove that."
+
+*Close the panel. Click **Tie out to the certified metric view**.*
+
+> "App, Genie and finance's definition: **identical to the cent**. That's the end of three different numbers in the board pack."
+
+*If you have time, open Genie again and ask "Which acquired Harbor & Cole clients overlap…":*
+
+> "And that's the cross-sell list your teams can start on tomorrow."
+
+### Moment 4 · "People make the judgement calls" (data steward view)
+
+> "So far the machine's done the work. But some cases genuinely need a human, so let me switch hats and be a data steward."
+
+*Click the **Data steward** tab.*
+
+> "Out of about three thousand six hundred match decisions, the model was confident on all but **fifty-one**. That's just over one percent. Only those come to a person."
+
+*Click a pair, ideally a MERIDIAN one.*
+
+> "Here are both records side by side, with which fields agree and which don't, how confident the model is, and Claude's recommendation with its reasoning. Claude advises; the steward decides."
+
+*Type "Same name and country, legacy duplicate" and click **Approve merge**.*
+
+> "That decision is saved, with my name, the time and my reason, so it's fully auditable. Then, without anyone writing any integration code, it streams back into the lakehouse in about **thirteen seconds**."
+
+*Click **Run entity resolution now**.*
+
+> "This reruns the matching with my decision as a hard rule. It takes a few minutes, so here's one I ran earlier."
+
+*Open `evidence/09_steward_roundtrip.md`.*
+
+> "Before: two separate Meridian records. After: one client. A click in the app changed the golden record. That's the loop."
+
+*Optional, 20 seconds, on the MLflow tab:*
+
+> "And the model itself is versioned and governed. On test data it never merged two different companies wrongly, and it found 98% of the true duplicates."
+
+### Moment 5 · "Governed once, enforced everywhere" (Unity Catalog)
+
+> "Last one, and for a broker this might matter most: some of your clients are defence and government, and only certain people should ever see them."
+
+*Search **Ironclad** in the app.*
+
+> "I can see Ironclad, flagged restricted, because I'm in the approved group. And notice that it isn't stored in the fast app database at all. Sensitive clients never get copied out."
+
+*Switch to `nb_gold` → **Policies**.*
+
+> "Here's how it works. Instead of writing a security rule for every table, we tag the sensitive data once, and two policies protect every table carrying that tag. One hides restricted clients. The other masks contact names, emails and phone numbers."
+
+*Open `evidence/04_governance.md`.*
+
+> "To prove it, I took myself out of the group. Within a few minutes the restricted clients went from fifty-one to zero, in the app, in SQL and in Genie. Genie literally answered 'zero restricted clients'. Same rule, every tool."
+
+*Switch to `dim_party` → **Lineage**.*
+
+> "And for your auditors: every client traces back through each step to the original file in each of the four systems."
+
+*Switch back to the deck and press → to slide 8.*
+
+---
+
+## 16:30 · What it's worth (slide 8)
+
+> "So, what's that worth? Let me walk you through it, because I want you to be able to argue with it.
+>
+> First line: 75 client families are served by *both* firms, with about ninety million of revenue. If seeing the full relationship helps you keep just 2% more at renewal, that's **1.8 million**.
+>
+> Second line: 224 families exist only in the Harbor & Cole book, about thirty-five million. If you sell them 5% more, that's **1.7 million**.
+>
+> Third line: eleven million of commission that carriers short-paid or never paid. Recover 30% and that's **3.4 million**.
+>
+> Total: about **6.9 million a year**, or in your terms, 0.7 points of organic growth and 72 basis points of margin.
+>
+> Those percentages are deliberately cautious. In the pilot we replace them with your own numbers."
+
+*Tie it to their discovery answer. If they said leakage: "and you said leakage was the big one; that's the largest line here."*
+
+## 17:45 · Why you can trust it (slide 9)
+
+> "And two reasons to trust it: there's one definition of revenue, enforced everywhere, and the sensitive clients are protected by policy, not by people remembering to."
+
+*Skip slides 10 and 11. You've just shown both live. Press → three times to slide 12.*
+
+## 18:30 · The trade-offs (slide 12), mostly for the architect
+
+> "A few choices I made on purpose, so you don't have to ask.
+>
+> Restricted clients stay out of the fast database. The trade-off is that they load in about three seconds instead of milliseconds. For a handful of very sensitive clients, I think that's the right call.
+>
+> Security is by tag, not table by table, so a new table is protected the moment it's tagged.
+>
+> And the AI is only used where it adds judgement, on the uncertain one percent. That keeps it cheap and explainable."
+
+## 19:30 · How I built it (slide 13)
+
+> "People always ask how long this took. I built it in one working session with Claude Code and the Databricks skills. The AI wrote, tested and verified the code; I made the decisions at each checkpoint.
+>
+> It mattered in a few specific places. It tested the platform's limits *before* we depended on them. It checked itself against known answers, which caught a bug that was wrongly merging 830 records. And a second AI reviewed the code and found ten real defects, which we fixed. Every number you've seen today is pulled live, not typed in."
+
+## 20:30 · The pilot (slide 14)
+
+> "So here's how we'd do this for real, on your data, in six weeks.
+>
+> Weeks one and two: we connect your CRM, billing and the Harbor & Cole system. Weeks three and four: we tune the matching on your stewards' decisions and agree the revenue definition with finance. That's when your teams get their first worklists. Weeks five and six: twenty account executives using the app, and Genie in the hands of finance and placement."
+
+## 21:30 · What's next (slide 15)
+
+> "And beyond the pilot, three things to make the AI accountable in production. First, we score Claude's advice against what your stewards actually decide, so you can see over time whether it's earning trust. Second, we watch the model for drift and retrain it automatically when your data changes. Third, instead of one pair at a time, Claude writes up a whole corporate family for a steward to approve in one go.
+>
+> To be clear, those aren't built yet. But each one builds on something that's already running."
+
+## 22:15 · The ask (slide 16)
+
+> "So, what I'd need from you: a sponsor, a named owner for client data, read access to three systems, and two stewards for a couple of hours a week.
+>
+> In return, in six weeks you'll have one governed view of every client and a value case built on your own numbers. **Can we agree to start the pilot?**"
+
+*Stop talking. Let them answer.*
+
+## 23:00 · Questions
+
+> "What questions do you have?"
+
+If it's quiet, go to slide 17 and say:
+
+> "The ones I usually get are 'we already have an MDM programme', 'what does it cost', and 'can we trust the automatic merges'. Happy to start with any of those."
+
+**End on:**
+
+> "One governed view of every client, about seven million a year, six weeks to prove it on your numbers. Shall we get it started?"
 
 ### If you're running late
-
-- **Behind at 10:00:** shorten Moment 3 to one Genie question plus the tie-out.
-- **Behind at 15:00:** in Moment 5, show only Ironclad, the Policies tab and the toggle evidence.
-- **Behind at 20:00:** skip slide 12 and go straight to slide 13.
+- **Behind at 10:00:** one Genie question plus the tie-out only.
+- **Behind at 15:00:** in Moment 5, show Ironclad and the toggle evidence only.
+- **Behind at 20:00:** skip slides 13 and 15, and go straight to the pilot and the ask.
 
 ---
 
-## 4. Expected questions and answers
+## Expected questions, with conversational answers
 
-Answer at the asker's level, then **bridge** in one sentence to the other persona.
+General tip: answer at the level they asked, then add one sentence for the other person in the room. For example: *"…and for you, [CFO], that means fewer surprises at renewal."*
 
-### Business sponsor (COO / Chief Client Officer)
+### From the CFO / business side
 
-| Question | Answer |
-|---|---|
-| What's the AE view vs the steward view? | "The AE **reads** the golden record to win renewals: one client, one number, in milliseconds. The steward **writes** to it, deciding the 1.4% of matches the model isn't sure about. Their decisions flow back automatically." |
-| What does this cost? | "Serverless, pay per use. The full rebuild is about 14 minutes of job time, and Lakebase scales to zero when idle. We size it on your volumes in the pilot; it's a fraction of any single value lever." |
-| How fast do we see value? | "Six weeks to a pilot on your data. The overlap and leakage worklists are usable from week four." |
-| We already have an MDM / CRM consolidation programme. | "This feeds it rather than competing with it. You get a governed golden record now and publish it to the MDM or CRM when that lands. It also hands that programme tested match rules and labels." |
-| Is the $6.9M real? | "The inputs are measured: overlap revenue, acquired-only revenue, flagged commission. The rates are conservative placeholders. Even the leakage lever alone covers the programme." |
-| What if it merges two clients wrongly? | "Cannot-link rules stop it merging different countries or registration numbers. Uncertain pairs go to a steward. Any merge can be split in one click, and every decision is audited." |
-| Will AEs adopt it? | "It answers the one question they ask before every renewal, in milliseconds, and Genie means no SQL. The pilot measures usage across 20 AEs." |
-| Confidentiality: defence and government clients? | "Policy-based. Restricted clients are never copied to the operational database. Removing someone from the group hides them across the app, SQL and Genie within minutes, with lineage for audit." |
-| Can finance trust Genie's numbers? | "Genie uses the same certified metric view as finance, and it ties out to the cent. The SQL is always visible." |
-| Who owns this after the pilot? | "A data domain owner on your side owns the rules and stewards. Everything is code in one bundle, so your team can run and change it." |
+**"What's the difference between the account executive view and the steward view?"**
+> "The account executive *reads* the golden record. It's how they win renewals. The steward *writes* to it, settling the 1% of cases the model isn't sure about. Their decisions flow back automatically, so the AE always sees the corrected version."
 
-### Architect / head of data
+**"What does this cost?"**
+> "It runs on serverless, so you pay for what you use. The whole rebuild is about fourteen minutes of compute, and the app database switches itself off when idle. We'd size it properly on your volumes in the pilot, but it's a small fraction of even one of those value lines."
 
-| Question | Answer |
-|---|---|
-| **Lakeflow:** why declarative pipelines, not notebooks? | "Declarative: dependencies, retries, incremental processing and data quality come for free and show up in the UI. Auto Loader handles new files and schema drift." |
-| **Lakeflow:** how do you handle the three carrier layouts? | "Each layout lands in its own bronze table. Silver maps each to one schema and unions them, with a layout tag kept for traceability. I deliberately didn't build the optional statement-normalisation agent; deterministic mappings are cheaper and auditable for known layouts. If carriers keep adding layouts, an Agent Bricks extractor slots in at bronze." |
-| **Lakeflow:** what happens to bad rows? | "`expect_all_or_drop` at silver. A quarantine view keeps the dropped rows and names the rule each one broke. Warn-only rules track completeness, like missing registration numbers." |
-| **ML:** how does matching scale? | "Blocking on registration number, name plus country, phonetic key and postcode gives about 37K candidate pairs from 4.3K records. That's near-linear, not n². At larger scale, featurisation moves to Spark UDFs; the design doesn't change." |
-| **ML:** which model, and why? | "A gradient-boosted classifier on 17 explainable features (name similarity variants, registration distance, address, country). It's registered in Unity Catalog with MLflow under a champion alias, and precision and recall are logged every run." |
-| **ML:** how do you stop over-merging? | "Union-find clustering with cannot-link constraints: one country per party, no conflicting registration numbers, and steward rejects applied transitively. 22 merges were blocked in the last run." |
-| **ML:** are party IDs stable? | "Yes. Clusters inherit the previous run's ID, and new IDs are salted so they never collide. The last run reassigned 0 records." |
-| **GenAI:** LLM cost and hallucination? | "Bounded: only pairs in the 0.30–0.80 band, at most 300 per run, cached per pair, with JSON-schema output. It only advises; a human decides." |
-| **GenAI:** which model? | "Claude Sonnet via the Databricks Foundation Model API, called from SQL with `ai_query`. No data leaves the platform's governance boundary." |
-| **Hierarchy:** how is it derived? | "From the legal-entity registry's parent references and registration numbers, joined to the resolved parties. That's how a renamed subsidiary links up." |
-| **UC:** why ABAC? | "Two policies at schema level match tags, not tables. New gold tables are protected by tagging. Row filter on the restriction flag; masks on columns classified as name, email or phone." |
-| **UC:** service principal grants? | "The app's SP has read on gold and the serving projections only. Genie and restricted reads run on behalf of the user, so policies apply to the person." |
-| **UC:** is the metric view really the single source? | "Yes. The app tie-out, Genie's trusted function and finance all query `client_revenue_metrics`. The definition is in the table comment and YAML." |
-| **Lakebase:** why Lakebase *and* a warehouse? | "Lakebase handles point lookups in about 25 ms and transactional steward writes. The warehouse handles analytics and policy-protected reads. Lakebase can't sync policy-protected tables, so restricted clients stay in gold." |
-| **Lakebase:** how does write-back work? | "The steward row goes into a Postgres table. Lakehouse Sync (Beta) streams changes as CDC into a Delta history table in about 13 seconds. Entity resolution reads the latest decision per pair. No custom code." |
-| **Lakebase:** sync mode? | "Snapshot sync after each gold build. Triggered or continuous sync with CDF is the production option." |
-| **Genie:** how do you keep answers correct? | "Curated to gold and the metric view only, never bronze or silver. Instructions carry broker vocabulary. Trusted functions back the key questions, and there are five benchmark questions, all tested correct." |
-| **Genie:** does it respect security? | "It runs as the user. With my access removed, it answered '0 restricted clients'." |
-| **App:** why Dash? Can it be React? | "Dash was the most robust for a Python-native team. The backend is separable, so a React/AppKit front end can reuse it." |
-| **DevOps:** how is it deployed? | "One Asset Bundle with jobs, pipelines, app and the Lakebase project. `bundle deploy` plus one job run rebuilds from an empty catalog. There's a teardown script, and it was tested from scratch." |
-| **Integration:** what about real sources? | "Lakeflow Connect for Salesforce and SQL Server, Auto Loader for carrier files. The golden record can be pushed back to the CRM via reverse ETL." |
-| What's real vs synthetic? | "The platform, model, LLM calls, policies and sync are all real and running. The data is synthetic but broker-realistic: name variants, duplicates, missing registrations and true negatives." |
+**"How quickly do we see value?"**
+> "Inside six weeks. The overlap and leakage lists are usable from about week four."
+
+**"We already have an MDM programme."**
+> "Then this helps it rather than competing with it. You get a governed golden record now, and when the MDM lands, you hand it tested matching rules and clean data. You don't have to wait two years to start getting value."
+
+**"Is the $6.9M real?"**
+> "The inputs are real measurements from the data: how much overlapping revenue, how much flagged commission. The percentages are my cautious assumptions, and replacing them with your numbers is the first thing we'd do. Even the commission line alone pays for the programme."
+
+**"What if it merges two different clients by mistake?"**
+> "Three safety nets. It refuses to merge companies from different countries or with conflicting registration numbers. Anything uncertain goes to a person. And any merge can be undone with one click, with a full audit trail."
+
+**"Will account executives actually use it?"**
+> "It answers the one question they ask before every renewal, in milliseconds, and they can ask Genie in plain English. We'd measure adoption across twenty AEs in the pilot."
+
+**"How do you protect our defence and government clients?"**
+> "By policy. They're never copied into the operational database, and you saw that removing someone's access hides them everywhere within minutes, with lineage for the auditors."
+
+**"Can finance trust Genie's numbers?"**
+> "Genie uses exactly the same revenue definition as finance, and we proved it ties out to the cent. And it always shows you the query it ran."
+
+**"Who owns this afterwards?"**
+> "Your client-data owner owns the rules and the stewards. Everything's code, so your team can run and change it."
+
+### From the architect / technical side
+
+**"Why declarative pipelines rather than notebooks?"**
+> "You describe what each table should be, and the platform handles the order, retries, incremental loading and quality reporting, all visible in the UI. Auto Loader picks up new files and copes when columns change."
+
+**"How did you handle three carrier layouts?"**
+> "Each lands as-is in its own raw table, and the cleaning step maps all three to one standard shape. I deliberately didn't use an AI agent for that: fixed mappings are cheaper and auditable for layouts you know. If carriers keep inventing new ones, an Agent Bricks extractor could slot in at the front."
+
+**"How does the matching scale?"**
+> "We never compare everything with everything. We only compare records that share something, like a registration number, a similar name in the same country, or a postcode. That gives about thirty-seven thousand pairs from four thousand records instead of millions. At much bigger scale, the scoring moves onto Spark, but the design stays the same."
+
+**"Which model, and why not a black box?"**
+> "A gradient-boosted classifier on seventeen features a person can understand: name similarity, registration number distance, address, country. It's registered in Unity Catalog through MLflow, and precision and recall are logged every run."
+
+**"How do you stop it chaining unrelated companies together?"**
+> "Rules it can't break: one country per client, no conflicting registration numbers, and a steward's 'keep separate' is respected even indirectly. Twenty-two merges were blocked by those rules in the last run."
+
+**"What about LLM cost and hallucination?"**
+> "It only sees the uncertain one percent, at most three hundred pairs a run, each cached so we never pay twice. The output is structured, not free text. And it only advises; a person decides."
+
+**"Does data leave the platform for the LLM?"**
+> "No. Claude is called through Databricks' Foundation Model API from SQL, inside the governance boundary."
+
+**"How does the family tree get built?"**
+> "From the company registry's parent references and registration numbers, joined to the matched clients. That's how a renamed subsidiary like Bluewater gets linked."
+
+**"Why ABAC instead of row filters on each table?"**
+> "Because it scales with your data, not your code. You tag a column once, and one policy covers every table with that tag."
+
+**"Why Lakebase *and* a SQL warehouse?"**
+> "Different jobs. Lakebase is for instant lookups and for saving steward decisions, like any app database. The warehouse is for analytics and for the policy-protected data, which deliberately isn't copied into Lakebase."
+
+**"How do steward decisions get back without custom code?"**
+> "Lakehouse Sync streams every change in that Postgres table into a Delta table in Unity Catalog, in about thirteen seconds. The next matching run reads the latest decision for each pair. It's in Beta, so in production I'd keep a scheduled job as a fallback."
+
+**"Is the metric view really the single source of truth?"**
+> "Yes. The app's tie-out, Genie's trusted function and finance all query the same metric view, and its definition is written into the table's description."
+
+**"How do you keep Genie accurate?"**
+> "It only sees certified gold and the metric view, never raw data. It has written instructions in broker language, trusted functions for the key questions, and five benchmark questions that we tested against known answers. All five were correct."
+
+**"How's it deployed?"**
+> "One Asset Bundle with the jobs, pipelines, app and database. One deploy and one job run rebuilds everything from an empty catalog, and there's a teardown script. I tested it from scratch."
+
+**"What about our real systems?"**
+> "Lakeflow Connect has connectors for Salesforce and SQL Server, and Auto Loader handles the carrier files. The golden record can be pushed back into your CRM too."
 
 ### Curveballs
 
-| Question | Answer |
-|---|---|
-| "Show me it fail." | Open the `dq_quarantine` table or a reject-pair decision. Or: "The model is honest about its limits: 51 pairs it won't decide alone." |
-| "What would you do differently?" | "Continuous Lakebase sync, a carrier-statement extraction agent for new layouts, and active learning from steward decisions on a schedule." |
-| "What's in Beta?" | "Lakehouse Sync is Beta, so for production I'd also keep a scheduled job fallback. Everything else is GA." |
-| "Where did AI help you build it?" | "Claude Code wrote and tested most of the code. I owned the design decisions and verification; it's documented in the README." |
+**"What's real and what's synthetic?"**
+> "Everything you saw running is real: the pipelines, model, AI calls, security policies, database sync, Genie and the app. The *data* is made up, but deliberately messy in the way broker data really is."
+
+**"Show me where it fails."**
+> "Sure." *Open `dq_quarantine`, or the steward queue.* "And the model is honest about its limits: there are fifty-one cases it won't decide alone."
+
+**"What would you do differently?"**
+> "Continuous sync rather than snapshots, the AI accountability pieces on slide 15, and retraining on steward decisions on a schedule."
+
+**"What's in Beta?"**
+> "Lakehouse Sync, the return path for steward decisions. For production I'd keep a scheduled fallback job. The rest is generally available."
+
+**"I'm not a broker. Why should I believe the business case?"**
+> "That's exactly why every assumption is on the slide in plain sight. The first thing the pilot does is replace my assumptions with your actual retention and recovery numbers."
 
 ---
 
-## 5. Coverage checklist: every requirement and when you show it
+## Coverage checklist: every capability from the brief, and when you show it
 
-| Requirement from the brief | Where in the script |
+| Capability | Where |
 |---|---|
-| Synthetic broker data, 4 systems, mess injected | M1 (Volume, `HC_CLIENT_MASTER.TXT`), M2 (6 Kestrel variants) |
-| UC Volume raw drop zone | M1 |
-| Lakeflow pipeline, Auto Loader, bronze → silver → gold | M1 |
-| Failing expectations and quarantine | M1 (Data quality tab, `dq_quarantine`) |
-| Carrier statements in inconsistent layouts, normalised | M1 (three layouts → one schema) |
-| Lakeflow Job, re-runnable from scratch | M1 (job DAG), Q&A (bundle) |
-| Tags: pii / confidentiality / sox_relevant / certified; uncertified silver | M5 (table tags) |
-| Column masking on PII | M5 (`party_contacts`, Policies tab) |
-| Row filter on restricted segment | M5 (Ironclad, toggle evidence) |
-| Lineage to all 4 systems; Genie → gold | M5 (Lineage graph) |
-| Metric view for total client revenue | M3 (SQL, tie-out) |
-| Table and column comments | M3 (Genie instructions), M5 |
-| SP / Genie grants on gold only | Trade-offs, Q&A |
-| Blocking, pairwise model, clustering, stable party_id | M2 (the result), Q&A ML |
-| Legal-entity hierarchy | M2 (tree, Bluewater) |
-| MLflow / UC model registry | M4 (MLflow tab) |
-| LLM rationale for ambiguous pairs | M4 (Claude rationale) |
-| Lakebase synced tables, low latency | M2 (25 ms footnote) |
-| Steward write-back tables in Lakebase | M4 (Approve → Recent decisions) |
-| Round trip back to the lakehouse | M4 (Lakehouse Sync, `09_steward_roundtrip.md`) |
-| Genie space over gold and metric view only | M3 |
-| Instructions, sample questions, trusted assets | M3 (Instructions, chips, Show the SQL) |
-| 5 sample questions correct | M3 (two live), Q&A (benchmarks; `evidence/08_genie_test_results.md`) |
-| App: AE view (search, golden record, tree, revenue, placements, lineage) | M2 |
-| App: steward view (queue, score, LLM rationale, approve/reject/split → Lakebase) | M4 |
-| Genie embedded in the app | M3 (✦ Ask Genie panel) |
-| Restricted segment hidden for user without access (app and Genie) | M5 (toggle evidence) |
-| Asset Bundle, teardown | Journey slide, Q&A |
-| Revenue = fee + commission, never premium | M2 |
+| Synthetic broker data, 4 systems, deliberately messy | Moment 1, Moment 2 (six Kestrel records) |
+| UC Volume drop zone | Moment 1 |
+| Lakeflow pipeline, Auto Loader, bronze → silver → gold | Moment 1 |
+| Failing expectations and quarantine | Moment 1 |
+| Carrier statements in different layouts | Moment 1 |
+| Lakeflow Job, rebuildable from scratch | Moment 1; "How's it deployed?" |
+| Tags, certified gold, SOX, uncertified silver | Moment 5 (mention the tags on `dim_party`) |
+| PII column masking | Moment 5 (Policies) |
+| Restricted-client row filter, hidden from users without access | Moment 5 (Ironclad and the toggle) |
+| Lineage to all four systems | Moment 5 |
+| Metric view: one revenue definition | Moment 3 (tie-out) |
+| Matching model, clustering, stable IDs, hierarchy | Moment 2 (result), Moment 4 (MLflow), Q&A |
+| MLflow / Unity Catalog model registry | Moment 4 |
+| LLM rationale for uncertain pairs | Moment 4 |
+| Lakebase synced tables, low latency | Moment 2 (25 ms) |
+| Steward write-back and the round trip | Moment 4 |
+| Genie: instructions, trusted functions, sample questions | Moment 3 |
+| App: AE view and steward view | Moments 2 and 4 |
+| Genie inside the app | Moment 3 |
+| Asset Bundle, teardown | Slide 6, Q&A |
+| How it was built with AI | Slide 13 |
+| CFO metrics (organic growth, EBITDA margin) | Slides 4 and 8 |
+| Production roadmap (LLM judge, drift, action plans) | Slide 15 |

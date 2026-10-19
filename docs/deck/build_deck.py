@@ -117,14 +117,17 @@ slide("The problem", f"Kestrel Industries exists {len(kestrel_records)} times in
       "Make it concrete with Kestrel - read two of the record names aloud. The business stakeholder should recognise their own data here. "
       "Land it: the problem isn't any one system, it's that there's no governed layer above them.")
 
-slide("Who wins", "Value for the executive sponsor and for the domain owner",
-      '<div class="two"><div class="card"><div class="role">Executive sponsor · Chief Client Officer / COO</div><ul class="bullets">'
-      '<li>Organic growth: cross-sell into the acquired book</li><li>Client retention at renewal for overlapping relationships</li>'
-      '<li>Deal synergy capture reported to the board</li><li>One revenue number finance will sign</li></ul></div>'
+slide("Who wins", "What each buyer is measured on, and how this moves it",
+      '<div class="two"><div class="card"><div class="role">Executive sponsor · CFO (with the Chief Client Officer)</div><ul class="bullets">'
+      f'<li><b>Organic revenue growth:</b> +{(v_ret + v_xsell) / rev25 * 100:.1f} pts from renewal retention and cross-sell ({M(v_ret + v_xsell)})</li>'
+      f'<li><b>Adjusted EBITDA margin:</b> +{v_leak / rev25 * 1e4:.0f} bps from recovered carrier commission ({M(v_leak)}, no added cost to serve)</li>'
+      '<li><b>Acquisition synergy capture</b> against the Harbor &amp; Cole deal case, reported to the board</li>'
+      '<li><b>One SOX-tagged revenue number</b> finance signs, tied out to the cent</li></ul></div>'
       '<div class="card"><div class="role">Domain owner · Head of Client Data &amp; Governance</div><ul class="bullets">'
       f'<li>Duplicate rate and time-to-resolve, with {review_n} reviews instead of {auto_n + review_n:,}</li><li>Steward throughput with an AI second opinion on every hard case</li>'
       '<li>Restricted-client access enforced by policy, provably</li><li>Lineage from every number back to the source record</li></ul></div></div>',
-      "Name both buyers explicitly. The sponsor funds it for growth and synergy; the domain owner has to run it. Say which KPI each one is measured on.",
+      "Name both buyers explicitly and the exact metric each is paid on. The CFO is measured on organic growth and EBITDA margin: retention and cross-sell move growth, "
+      "recovered commission drops straight to margin. The Chief Client Officer co-sponsors on retention. The domain owner is measured on duplicate rate and steward throughput.",
       takeaway="One shared measure: certified total relationship revenue per client, the number both of them report.")
 
 rows = [("Protect overlapping relationships at renewal", f"{int(ov_groups)} groups · {M(ov_total)} FY2025", f"+{A_RET:.0%} retention", M(v_ret)),
@@ -134,7 +137,9 @@ rows = [("Protect overlapping relationships at renewal", f"{int(ov_groups)} grou
 tbl = "".join(f"<tr><td>{e(a)}</td><td>{e(b)}</td><td>{e(c)}</td><td class='num'>{e(d)}</td></tr>" for a, b, c, d in rows)
 slide("The value case", f"{M(v_total)} a year on a {M(rev25)} book: about {v_total / rev25:.1%} of fee & commission income",
       f'<table class="value"><tr><th>Lever</th><th>Measured in the build</th><th>Assumption</th><th class="num">Annual value</th></tr>{tbl}'
-      f'<tr class="total"><td colspan="3">Revenue impact (first three levers)</td><td class="num">{M(v_total)}</td></tr></table>'
+      f'<tr class="total"><td colspan="3">Revenue impact (first three levers)</td><td class="num">{M(v_total)}</td></tr>'
+      f'<tr><td colspan="3"><b>In the CFO\'s metrics:</b> organic revenue growth (retention + cross-sell) · adjusted EBITDA margin (recovered commission)</td>'
+      f'<td class="num">+{(v_ret + v_xsell) / rev25 * 100:.1f} pts · +{v_leak / rev25 * 1e4:.0f} bps</td></tr></table>'
       '<p class="foot">Measured figures come from the running build (evidence/10_value_inputs.md). Assumptions are deliberately conservative and should be replaced with Northbridge\'s own renewal and recovery rates in the pilot.</p>',
       "Walk the table left to right: what we measured, what we assumed, what it's worth. Invite them to change the assumptions - that's the point of the pilot. "
       "Cost objection: the platform cost for this scope is a small fraction of one lever.")
@@ -239,6 +244,34 @@ slide("Appendix", "Evidence and what is synthetic",
       'carriers and amounts are generated (fixed seed). Training labels stand in for a steward-labelled match history. No customer data.</p></div></div>',
       "Only if asked.")
 
+slide("How it was built", "AI as the force multiplier; a human owned every decision",
+      '<div class="two"><div class="card"><div class="role">The workflow</div><ul class="bullets">'
+      '<li><b>Claude Code</b> (Claude Opus 5.5) in the terminal, with the Databricks plugin skills: core, pipelines, DABs, Lakebase, Genie, metric views, apps</li>'
+      '<li><b>Human checkpoints:</b> catalog, ABAC over per-table filters, the Lakebase serving design, UX feedback</li>'
+      '<li><b>AI did the build, tests and evidence;</b> an AI code-review agent challenged it</li>'
+      '<li>One working session, one bundle, rebuilt from an empty catalog to verify</li></ul></div>'
+      '<div class="card"><div class="role">Where it multiplied</div><ul class="bullets">'
+      '<li><b>Probe before design:</b> five platform limits found in the workspace before code depended on them</li>'
+      '<li><b>Ground truth from day one:</b> labels caught a party-id collision (830 false merges to 0)</li>'
+      '<li><b>Prompts tuned on evidence:</b> the steward prompt went from 91% "needs info" to decisive v2</li>'
+      '<li><b>Adversarial review:</b> 10 real defects found, fixed, re-verified</li>'
+      '<li><b>Evidence as code:</b> every number on these slides is a live query</li></ul></div></div>',
+      "Answer 'how did you build this so fast?'. The AI wrote, ran and tested; I set direction at checkpoints and owned the trade-offs. "
+      "Point to the README section and the conversation ID for verification. Bridge: the pilot uses the same workflow on Northbridge's data.",
+      takeaway="The same workflow runs the pilot: the AI builds and measures, Northbridge's people make the calls.")
+
+slide("What's next", "From pilot to production: make the AI accountable",
+      '<div class="three">'
+      '<div class="card"><div class="role">1 · Judge the AI</div><p>An LLM-judge pass scores Claude\'s merge / keep-separate advice against the steward\'s eventual decision. '
+      'Agreement rate is trended per prompt version in MLflow, and prompt changes ship only if it holds.</p></div>'
+      '<div class="card"><div class="role">2 · Watch for drift</div><p>Each run compares the match-score distribution and the review-band share with the last. '
+      'When the band drifts past a threshold, a job condition retrains on steward labels and promotes a challenger to <i>champion</i> only if it wins.</p></div>'
+      '<div class="card"><div class="role">3 · Steward action plans</div><p>The Foundation Model writes a narrative case for a batch, e.g. a whole corporate family, '
+      'grounded in certified gold (hierarchy, revenue, placements) and logged like pair assessments. Stewards approve a family, not one pair at a time.</p></div></div>',
+      "Roadmap, not built: say so. Each item extends something already running: the steward decisions table is the judge's ground truth, "
+      "the ER run log already records the review-band share, and the model registry already has a champion alias.",
+      takeaway="Each step extends what's already running: steward decisions, the ER run log and the champion model alias.")
+
 slide("Live demo", "Let's look at it running",
       '<ol class="moments light"><li><b>Account executive:</b> Kestrel, one golden record, hierarchy, revenue</li>'
       '<li><b>Genie:</b> total relationship and Harbor &amp; Cole overlap, in plain English</li>'
@@ -250,12 +283,13 @@ slide("Live demo", "Let's look at it running",
 
 # Presentation order follows the 30-minute agenda (docs/roleplay_prep.md): frame, demo, value, depth, plan, ask, backup
 ORDER = ["Northbridge Risk Partners · Client 360", "The outcome", "The problem", "Who wins", "What I'll show", "The journey", "Live demo",
-         "The value case", "Trust", "The operational loop", "The golden record", "Decisions and trade-offs", "Time to value", "The ask",
+         "The value case", "Trust", "The operational loop", "The golden record", "Decisions and trade-offs", "How it was built", "Time to value",
+         "What's next", "The ask",
          "Questions we expect", "Appendix"]
 TARGET = {"Northbridge Risk Partners · Client 360": "0:00", "The outcome": "0:45", "The problem": "2:00", "Who wins": "3:00",
           "What I'll show": "4:00", "The journey": "5:00", "Live demo": "6:00", "The value case": "18:00", "Trust": "19:30",
-          "The operational loop": "20:15", "The golden record": "21:00", "Decisions and trade-offs": "22:30", "Time to value": "24:00",
-          "The ask": "25:00", "Questions we expect": "26:00 (backup)", "Appendix": "if asked"}
+          "The operational loop": "20:15", "The golden record": "21:00", "Decisions and trade-offs": "22:00", "How it was built": "23:00",
+          "Time to value": "24:00", "What's next": "24:45", "The ask": "25:30", "Questions we expect": "26:00 (backup)", "Appendix": "if asked"}
 SLIDES = sorted(SLIDES, key=lambda x: ORDER.index(x["kicker"]))
 VALUE_SLIDE = ORDER.index("The value case") + 1
 for s_ in SLIDES:
@@ -292,6 +326,8 @@ h3 { font-family: 'Iowan Old Style', Charter, Georgia, serif; font-weight: 400; 
 .stat .s { font-size: 13px; color: #6B6560; margin-top: 6px }
 .foot { position: absolute; bottom: .45in; left: .85in; right: .85in; font-size: 12.5px; color: #6B6560 }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 34px }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px }
+.three .card p { font-size: 17px; line-height: 1.45 }
 .card { background: #FBF9F4; border: 1px solid #E5DFD3; border-radius: 14px; padding: 22px 26px }
 .role { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #CC785C; font-weight: 700; margin-bottom: 10px }
 .bullets { padding-left: 20px; margin: 0; font-size: 17px; line-height: 1.5 }

@@ -23,14 +23,14 @@ $89.8M relationship revenue across 75 client groups served by both books now vis
 
 > **Speaker notes:** Make it concrete with Kestrel - read two of the record names aloud. The business stakeholder should recognise their own data here. Land it: the problem isn't any one system, it's that there's no governed layer above them.
 
-## 4. Value for the executive sponsor and for the domain owner
+## 4. What each buyer is measured on, and how this moves it
 *Who wins*
 
-Executive sponsor · Chief Client Officer / COO - Organic growth: cross-sell into the acquired book - Client retention at renewal for overlapping relationships - Deal synergy capture reported to the board - One revenue number finance will sign Domain owner · Head of Client Data & Governance - Duplicate rate and time-to-resolve, with 51 reviews instead of 3,661 - Steward throughput with an AI second opinion on every hard case - Restricted-client access enforced by policy, provably - Lineage from every number back to the source record
+Executive sponsor · CFO (with the Chief Client Officer) - Organic revenue growth: +0.7 pts from renewal retention and cross-sell ($3.5M) - Adjusted EBITDA margin: +72 bps from recovered carrier commission ($3.4M, no added cost to serve) - Acquisition synergy capture against the Harbor & Cole deal case, reported to the board - One SOX-tagged revenue number finance signs, tied out to the cent Domain owner · Head of Client Data & Governance - Duplicate rate and time-to-resolve, with 51 reviews instead of 3,661 - Steward throughput with an AI second opinion on every hard case - Restricted-client access enforced by policy, provably - Lineage from every number back to the source record
 
 **Takeaway:** One shared measure: certified total relationship revenue per client, the number both of them report.
 
-> **Speaker notes:** Name both buyers explicitly. The sponsor funds it for growth and synergy; the domain owner has to run it. Say which KPI each one is measured on.
+> **Speaker notes:** Name both buyers explicitly and the exact metric each is paid on. The CFO is measured on organic growth and EBITDA margin: retention and cross-sell move growth, recovered commission drops straight to margin. The Chief Client Officer co-sponsors on retention. The domain owner is measured on duplicate rate and steward throughput.
 
 ## 5. Four moments, twelve minutes
 *What I'll show*
@@ -60,7 +60,7 @@ Raw drop zone CRM · billing · placement · Harbor & Cole · carrier statements
 ## 8. $6.9M a year on a $474.5M book: about 1.5% of fee & commission income
 *The value case*
 
-Lever Measured in the build Assumption Annual value Protect overlapping relationships at renewal 75 groups · $89.8M FY2025 +2% retention $1.8M Cross-sell into Harbor & Cole-only clients 224 groups · $34.5M +5% wallet share $1.7M Recover commission leakage 371 placements · $11.3M flagged 30% recovered $3.4M Steward effort on duplicates 2,405 merges automated 10 min per manual merge ~401 hours / cycle Revenue impact (first three levers) $6.9M Measured figures come from the running build (evidence/10_value_inputs.md). Assumptions are deliberately conservative and should be replaced with Northbridge's own renewal and recovery rates in the pilot.
+Lever Measured in the build Assumption Annual value Protect overlapping relationships at renewal 75 groups · $89.8M FY2025 +2% retention $1.8M Cross-sell into Harbor & Cole-only clients 224 groups · $34.5M +5% wallet share $1.7M Recover commission leakage 371 placements · $11.3M flagged 30% recovered $3.4M Steward effort on duplicates 2,405 merges automated 10 min per manual merge ~401 hours / cycle Revenue impact (first three levers) $6.9M In the CFO's metrics: organic revenue growth (retention + cross-sell) · adjusted EBITDA margin (recovered commission) +0.7 pts · +72 bps Measured figures come from the running build (evidence/10_value_inputs.md). Assumptions are deliberately conservative and should be replaced with Northbridge's own renewal and recovery rates in the pilot.
 
 > **Speaker notes:** Walk the table left to right: what we measured, what we assumed, what it's worth. Invite them to change the assumptions - that's the point of the pilot. Cost objection: the platform cost for this scope is a small fraction of one lever.
 
@@ -96,7 +96,16 @@ Decision Why Trade-off Governed layer above the sources Value now; no source sys
 
 > **Speaker notes:** Technical stakeholder slide. Own the trade-offs before they're raised; it builds credibility.
 
-## 13. A six-week pilot on Northbridge's own data
+## 13. AI as the force multiplier; a human owned every decision
+*How it was built*
+
+The workflow - Claude Code (Claude Opus 5.5) in the terminal, with the Databricks plugin skills: core, pipelines, DABs, Lakebase, Genie, metric views, apps - Human checkpoints: catalog, ABAC over per-table filters, the Lakebase serving design, UX feedback - AI did the build, tests and evidence; an AI code-review agent challenged it - One working session, one bundle, rebuilt from an empty catalog to verify Where it multiplied - Probe before design: five platform limits found in the workspace before code depended on them - Ground truth from day one: labels caught a party-id collision (830 false merges to 0) - Prompts tuned on evidence: the steward prompt went from 91% "needs info" to decisive v2 - Adversarial review: 10 real defects found, fixed, re-verified - Evidence as code: every number on these slides is a live query
+
+**Takeaway:** The same workflow runs the pilot: the AI builds and measures, Northbridge's people make the calls.
+
+> **Speaker notes:** Answer 'how did you build this so fast?'. The AI wrote, ran and tested; I set direction at checkpoints and owned the trade-offs. Point to the README section and the conversation ID for verification. Bridge: the pilot uses the same workflow on Northbridge's data.
+
+## 14. A six-week pilot on Northbridge's own data
 *Time to value*
 
 Weeks 1–2 Connect CRM, billing and the H&C AMS with Lakeflow Connect; land carrier statements Weeks 3–4 Tune the match model on stewards' labels; certify the revenue metric with finance Weeks 5–6 Client 360 to 20 account executives; Genie to finance and placement Success criteria - ≥ 98% merge precision on a steward-audited sample - Total relationship revenue ties to finance to the dollar - Overlap and leakage worklists in AEs' and finance's hands - Restricted-segment access proven by audit
@@ -105,14 +114,23 @@ Weeks 1–2 Connect CRM, billing and the H&C AMS with Lakeflow Connect; land car
 
 > **Speaker notes:** Time-to-value objection. Everything shown runs on serverless and deploys from one bundle, so the pilot is about their data and their rules, not infrastructure.
 
-## 14. Start the six-week pilot
+## 15. From pilot to production: make the AI accountable
+*What's next*
+
+1 · Judge the AI An LLM-judge pass scores Claude's merge / keep-separate advice against the steward's eventual decision. Agreement rate is trended per prompt version in MLflow, and prompt changes ship only if it holds. 2 · Watch for drift Each run compares the match-score distribution and the review-band share with the last. When the band drifts past a threshold, a job condition retrains on steward labels and promotes a challenger to champion only if it wins. 3 · Steward action plans The Foundation Model writes a narrative case for a batch, e.g. a whole corporate family, grounded in certified gold (hierarchy, revenue, placements) and logged like pair assessments. Stewards approve a family, not one pair at a time.
+
+**Takeaway:** Each step extends what's already running: steward decisions, the ER run log and the champion model alias.
+
+> **Speaker notes:** Roadmap, not built: say so. Each item extends something already running: the steward decisions table is the judge's ground truth, the ER run log already records the review-band share, and the model registry already has a champion alias.
+
+## 16. Start the six-week pilot
 *The ask*
 
 - Executive sponsor and a named domain owner - Read access to CRM, billing and the Harbor & Cole AMS - Two data stewards, two hours a week - A finance owner for the revenue definition Outcome in six weeks: one governed view of every client, and a worked value case on Northbridge's own numbers.
 
 > **Speaker notes:** Close on the outcome, not the technology. Ask for the sponsor's commitment explicitly.
 
-## 15. Cost, risk and integration
+## 17. Cost, risk and integration
 *Questions we expect*
 
 Business - "We already have an MDM programme." This feeds it: a governed golden record and steward workflow today, published to any MDM later. - "What does it cost?" Serverless, pay per use; the pilot scope is a small fraction of one value lever. - "Can we trust automatic merges?" Every merge has a confidence, a lineage trail and a steward override. Technical - Scale. Blocking keeps comparisons near-linear; featurisation moves to Spark UDFs beyond ~1M records. - Integration. Lakeflow Connect for Salesforce / SQL Server; the golden record syncs back to operational systems. - Security. ABAC, on-behalf-of-user app and Genie access, service principal reads gold only.
@@ -121,7 +139,7 @@ Business - "We already have an MDM programme." This feeds it: a governed golden 
 
 > **Speaker notes:** Use as a backup slide. Answer at the asker's altitude, then bridge back to the business outcome in one sentence.
 
-## 16. Evidence and what is synthetic
+## 18. Evidence and what is synthetic
 *Appendix*
 
 Execution evidence (text, in the repo) - 00 · from-scratch teardown and build logs - 01 · build job tasks + notebook outputs - 02 · expectations and quarantine - 03 · entity resolution and MLflow - 04 · ABAC policies, tags, toggle test - 05 · lineage to all four systems - 06–07 · Lakebase and app selftest - 08 · five Genie questions vs ground truth - 09 · steward round trip - 10 · value inputs Real vs synthetic Every pipeline, model, policy, synced table, Genie space and the app is real and running. All companies, people, registration numbers, carriers and amounts are generated (fixed seed). Training labels stand in for a steward-labelled match history. No customer data.
