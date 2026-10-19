@@ -373,7 +373,13 @@ table.value tr.total .num { color: #CC785C; font-family: 'Iowan Old Style', Char
   .slide.active { display: flex }
   .hint { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); color: #6B6560; font: 12px -apple-system, sans-serif; opacity: .8 }
 }
-@media print { .hint { display: none } }
+@media print {   /* undo the presenter-mode scaling (inline transform set by the script) so each slide is exactly one page */
+  html, body { height: auto; overflow: visible; background: none }
+  .slide { position: relative !important; top: auto !important; left: auto !important; transform: none !important; display: flex !important;
+           box-shadow: none; break-after: page; page-break-after: always }
+  .slide:last-of-type { break-after: auto; page-break-after: auto }
+  .hint { display: none }
+}
 """
 
 pages = []
