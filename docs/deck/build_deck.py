@@ -90,7 +90,7 @@ def stat(value, label, sub=""):
 
 slide("Northbridge Risk Partners · Client 360", "One client. One number. Governed.",
       f'<p class="lede">A single, governed client master for a global broker after the Harbor &amp; Cole acquisition — built on Databricks in weeks, not a multi-year CRM migration.</p>'
-      f'<div class="byline">Richa Sethi · Solutions Architect, Databricks · October 2026</div>',
+      f'<div class="byline">Richa Sethi · Delivery Solutions Architect, Databricks · October 2026</div>',
       "Frame the room: who Northbridge is (global broker, fee and commission income, thousands of multinational clients), the deal that just closed "
       "(Harbor & Cole), and the question nobody can answer today. Tell them what you'll show: the outcome first, then a 12-minute demo in four moments, then the plan.",
       cls="title")
